@@ -16,11 +16,11 @@ import java.util.*;
  */
 public class MysqlPagingPlugin extends PluginAdapter {
 
-    private FullyQualifiedJavaType rowBounds;
+    private FullyQualifiedJavaType javaType;
     private Map<FullyQualifiedTable, List<XmlElement>> elementsToAdd;
 
     public MysqlPagingPlugin() {
-        rowBounds = new FullyQualifiedJavaType("org.apache.ibatis.session.RowBounds");
+        javaType = new FullyQualifiedJavaType("java.lang.Integer");
         elementsToAdd = new HashMap<>();
     }
 
@@ -49,13 +49,14 @@ public class MysqlPagingPlugin extends PluginAdapter {
             IntrospectedTable introspectedTable) {
         if (introspectedTable.getTargetRuntime() == IntrospectedTable.TargetRuntime.MYBATIS3) {
             Method newMethod = new Method(method);
-            newMethod.setName(method.getName() + "WithRowbounds");
+            newMethod.setName(method.getName() + "WithPage");
             Parameter oriParameter = method.getParameters().get(0);
             newMethod.getParameters().clear();
             newMethod.addParameter(new Parameter(oriParameter.getType(), oriParameter.getName(), "@Param(\"example\")"));
-            newMethod.addParameter(new Parameter(rowBounds, "rowBounds", "@Param(\"rowBounds\")"));
+            newMethod.addParameter(new Parameter(javaType, "offset", "@Param(\"offset\")"));
+            newMethod.addParameter(new Parameter(javaType, "limit", "@Param(\"limit\")"));
             interfaze.addMethod(newMethod);
-            interfaze.addImportedType(rowBounds);
+            interfaze.addImportedType(javaType);
         }
         return true;
     }
@@ -75,7 +76,7 @@ public class MysqlPagingPlugin extends PluginAdapter {
     //  </if>
     //</select>
 
-    //<select id="selectByExampleWithRowbounds" resultMap="BaseResultMap">
+    //<select id="selectByExampleWithPage" resultMap="BaseResultMap">
     //  select
     //  <if test="example.distinct">
     //    distinct
@@ -88,7 +89,7 @@ public class MysqlPagingPlugin extends PluginAdapter {
     //  <if test="example.orderByClause != null">
     //    order by ${example.orderByClause}
     //  </if>
-    //  limit #{rowBounds.offset}, #{rowBounds.limit}
+    //  limit #{offset}, #{limit}
     //</select>
     @Override
     public boolean sqlMapSelectByExampleWithoutBLOBsElementGenerated(
@@ -99,7 +100,7 @@ public class MysqlPagingPlugin extends PluginAdapter {
             Attribute attribute = iterator.next();
             if ("id".equals(attribute.getName())) {
                 iterator.remove();
-                Attribute newAttribute = new Attribute("id", attribute.getValue() + "WithRowbounds");
+                Attribute newAttribute = new Attribute("id", attribute.getValue() + "WithPage");
                 newElement.addAttribute(newAttribute);
                 break;
             }
@@ -151,7 +152,7 @@ public class MysqlPagingPlugin extends PluginAdapter {
     }
 
     protected void appendLimit(XmlElement newElement) {
-        newElement.addElement(new TextElement("limit #{rowBounds.offset}, #{rowBounds.limit}"));
+        newElement.addElement(new TextElement("limit #{offset}, #{limit}"));
     }
 
     private void appendOrder(XmlElement newElement) {
