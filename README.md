@@ -1,4 +1,4 @@
-# mbg-paging-plugin
+# mbg-paging-plugin ![ci](https://travis-ci.org/zhengzhiren/mbg-paging-plugin.svg?branch=master)
 MyBatis Generator paging plugin for MySQL
 
 This plugin generates the following methods for each mapping interface:
